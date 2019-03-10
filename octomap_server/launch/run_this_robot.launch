@@ -46,7 +46,7 @@
                         <arg name="robot_name" value="$(arg robot_name)"/>
                 </include>
 
-                <!-- LAUNCH OCTOMAP SERVER -->
+                <!-- LAUNCH MAP MERGING -->
                 <include file="$(find concat_pcl)/launch/run_map_merge.launch">
                         <arg name="robot_name" value="$(arg robot_name)"/>
                 </include>
