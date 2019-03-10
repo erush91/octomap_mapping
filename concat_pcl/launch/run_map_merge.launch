@@ -1,0 +1,15 @@
+<launch>
+        <arg name="robot_name" />
+
+        <node pkg="concat_pcl" type="map_merge" name="map_merge_occupied" output="screen">
+                <param name="robot_name" value="$(arg robot_name)" />
+                <param name="cloud_type" value="occupied" />
+        </node>
+
+	<node pkg="concat_pcl" type="map_merge" name="map_merge_free" output="screen">
+                <param name="robot_name" value="$(arg robot_name)" />
+                <param name="cloud_type" value="free" />
+        </node>
+
+</launch>
+
