@@ -129,17 +129,24 @@ int main(int argc, char** argv)
   ros::Publisher pclf_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/pclf_" + CLOUD_TYPE, 1000);
 
   ros::Rate loop_rate(0.2);
+  
+  long int cnt;
 
   while(ros::ok())
   {
-     	    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-            cout << "NAMESPACE_NAME: " << NAMESPACE_NAME << endl;
-            cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-            cout << "NODE_NAME: " << NODE_NAME << endl;
-            cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-            cout << "ROBOT_NAME: " << ROBOT_NAME << endl;
-            cout << "CLOUD_TYPE: " << CLOUD_TYPE << endl;
-            cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+	  cnt ++;
+
+    if(cnt == 1)
+    {
+      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+      cout << "NAMESPACE_NAME: " << NAMESPACE_NAME << endl;
+      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+      cout << "NODE_NAME: " << NODE_NAME << endl;
+      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+      cout << "ROBOT_NAME: " << ROBOT_NAME << endl;
+      cout << "CLOUD_TYPE: " << CLOUD_TYPE << endl;
+      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+    }
 
     pclf.fusePCL(pclf.sen_PCL_1, pclf.sen_PCL_2);
 	  
