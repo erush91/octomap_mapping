@@ -1,0 +1,13 @@
+<!--
+  REMOTE launch file for Running OctoMap on the RadarQuad drone (to be run on NUC onboard the drone)
+ -->
+
+<launch>
+
+  <!-- launch octomap_server node -->
+  <include file="$(find octomap_server)/launch/octomap_mapping.launch"/>
+
+  <!-- launch pcl_outlier_removal node -->
+  <include file="/home/erush91/catkin_ws/src/statistical_removal/launch/pcl_outlier_removal.launch"/>
+
+</launch>

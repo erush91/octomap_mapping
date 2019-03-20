@@ -1,0 +1,12 @@
+<!--
+  LOCAL launch file for the quad drone (to be run on the local machine) NOT the NUC onboard the drone
+ -->
+
+<launch>
+
+  <arg name="rviz" default="true"/>
+
+  <!-- Launch RVIZ -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find octomap_server)/rviz/quad.rviz"/>
+
+</launch>

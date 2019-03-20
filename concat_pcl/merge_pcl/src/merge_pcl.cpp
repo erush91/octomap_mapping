@@ -1,10 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Function Name : Motion Control
-// Purpose : Class to store and run a physics based motion controller
+// File Name : merge_pcl.cpp
+// Purpose : Merges PointCloud2 messages from different robots
 ///////////////////////////////////////////////////////////////////////////////
 // Changelog :
 // Date           % Name       %   Reason
-// 03 / 04 / 2019 % Gene Rush  %   Created - Added general structure
+// 03 / 12 / 2019 % Gene Rush  %   Created - Added code and comments
 ///////////////////////////////////////////////////////////////////////////////
 
 // ***ONLINE REFERNCES***
@@ -21,6 +21,7 @@
 // https:/`/stackoverflow.com/questions/43245726/pcl-downsample-with-pclvoxelgrid
 
 #include "ros/ros.h"
+#include <ros/master.h>
 #include "std_msgs/String.h"
 #include <iostream>
 
@@ -61,13 +62,13 @@ public:
   }
 
   ///////////////////////////////////////////////////////////////////////////////
-  //      Function Name : fusePCL
+  //      Function Name : mergePCL
   //      Purpose : Fuses point clouds together
   //      In:             sensor_msgs::PointCLoud2 - sen_PCL_1
   //      		  sensor_msgs::PointCLoud2 - sen_PCL_2
   //      Out:    
   ///////////////////////////////////////////////////////////////////////////////
-  sensor_msgs::PointCloud2 fusePCL(sensor_msgs::PointCloud2 sen_PCL_1, sensor_msgs::PointCloud2 sen_PCL_2)
+  sensor_msgs::PointCloud2 mergePCL(sensor_msgs::PointCloud2 sen_PCL_1, sensor_msgs::PointCloud2 sen_PCL_2)
   {
     // Convert sensor_msgs::PointCloud2 to pcl::PCLPointCLoud2
     pcl_conversions::toPCL(sen_PCL_1,pcl_PCL_1);
@@ -91,7 +92,7 @@ public:
     pcl_conversions::fromPCL(pcl_PCL_merge, sen_PCL_merge);
 
     // Debugging
-    ROS_INFO("merged sen PCL width: %d",sen_PCL_merge.width);
+    ROS_INFO("Merged pcl,  width: %d", sen_PCL_merge.width);
  
     return sen_PCL_merge;
   }
@@ -100,11 +101,7 @@ protected:
   
   // Declare a pcl::PCLPointCloud2
   pcl::PCLPointCloud2 pcl_PCL_1;
-  
-  // Declare a pcl::PCLPointCloud2
   pcl::PCLPointCloud2 pcl_PCL_2;
-
-  // Declare a concatenated pcl::PCLPointCloud2
   pcl::PCLPointCloud2 pcl_PCL_merge;
 };
 
@@ -112,46 +109,44 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "octomap_point_cloud_map_merge_node");
   ros::NodeHandle nh_;
-
+  
   std::string NAMESPACE_NAME;
-  std::string ROBOT_NAME;
-  std::string CLOUD_TYPE;
   std::string NODE_NAME;
+  std::string CLOUD_TYPE;
 
   NAMESPACE_NAME = ros::this_node::getNamespace();
   NODE_NAME = ros::this_node::getName();
-  nh_.param(NODE_NAME + "/robot_name", ROBOT_NAME, ROBOT_NAME);
   nh_.param(NODE_NAME + "/cloud_type", CLOUD_TYPE, CLOUD_TYPE);
 
-  PointCloudFuser pclf;
-  ros::Subscriber pclf_sub_5_ = nh_.subscribe("/A51/octomap_point_cloud_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_1, &pclf);
-  ros::Subscriber pclf_sub_6_ = nh_.subscribe("/A52/octomap_point_cloud_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_2, &pclf);
-  ros::Publisher pclf_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/pclf_" + CLOUD_TYPE, 1000);
+  PointCloudFuser pcl_global;
+  ros::Subscriber pclSub1 = nh_.subscribe("/A51/pcl_local_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_1, &pcl_global);
+  ros::Subscriber pclSub2 = nh_.subscribe("/A52/pcl_local_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_2, &pcl_global);
+  ros::Publisher pclGlobalPub1 = nh_.advertise<sensor_msgs::PointCloud2>(NAMESPACE_NAME + "/pcl_global_" + CLOUD_TYPE, 1000);
 
-  ros::Rate loop_rate(0.2);
+  ros::Rate loop_rate(0.0333);
   
-  long int cnt;
+  long int cnt = 0;
 
   while(ros::ok())
   {
-	  cnt ++;
-
+    /*
+    cnt ++;
     if(cnt == 1)
     {
-      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-      cout << "NAMESPACE_NAME: " << NAMESPACE_NAME << endl;
-      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-      cout << "NODE_NAME: " << NODE_NAME << endl;
-      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
-      cout << "ROBOT_NAME: " << ROBOT_NAME << endl;
-      cout << "CLOUD_TYPE: " << CLOUD_TYPE << endl;
-      cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+     	    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+            cout << "NAMESPACE_NAME: " << NAMESPACE_NAME << endl;
+            cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+            cout << "NODE_NAME: " << NODE_NAME << endl;
+            cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
+            cout << "CLOUD_TYPE: " << CLOUD_TYPE << endl;
+            cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
     }
+    */
 
-    pclf.fusePCL(pclf.sen_PCL_1, pclf.sen_PCL_2);
+    pcl_global.mergePCL(pcl_global.sen_PCL_1, pcl_global.sen_PCL_2);
 	  
     // Publish merged sensor_msgs::PointCloud2
-    pclf_pub_.publish(pclf.sen_PCL_merge);
+    pclGlobalPub1.publish(pcl_global.sen_PCL_merge);
     
     loop_rate.sleep();
     ros::spinOnce();

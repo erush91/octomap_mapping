@@ -1,0 +1,33 @@
+<!--
+  REMOTE launch file for the quad drone (to be run on NUC onboard the drone)
+ -->
+
+<launch>
+
+  <arg name="realsense_name_0" default="camera" doc="forward facing realsense"/>
+
+  <!-- launch rosflight node -->
+  <include file="$(find rosflight)/launch/auto_sys_startup.launch">
+    <arg name="vicon" value="false"/>
+    <arg name="optitrack" value="true"/>
+  </include>
+
+  <!-- launch static transforms -->
+  <include file="$(find octomap_server)/tf/quad_transforms.launch">
+    <arg name="camera" value="true"/>
+    <arg name="realsense_name_0" value="$(arg realsense_name_0)"/>
+  </include>
+
+  <!-- Initialize VRPN transforms node -->
+  <node pkg="ti_mmwave_rospkg" type="vrpn_RadarQuad_transform.py" name="vrpn_pose_tf" output="screen"/>
+
+  <!-- Relay forward realsense pcl to fused realsense pcl" -->
+  <node name="relay_fwd" pkg="topic_tools" type="relay" args="/camera/depth_registered/points
+/camera/depth_registered_fused/points" output="screen"/>
+
+  <!-- launch realsense node -->
+  <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+  </include>
+
+
+</launch>

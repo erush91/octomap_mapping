@@ -1,0 +1,59 @@
+<!-- LAUNCH ROBOT -->
+
+<launch>
+
+	<!-- DEFINE ROBOT NAMESPACE -->
+	<group ns="$(env ROS_HOSTNAME)">
+	
+		<!-- DEFINE ROBOT NAME -->
+		<arg name="robot_name"  value="$(env ROS_HOSTNAME)" />
+
+	  	<!-- LAUNCH ROSFLIGHT -->
+		<include file="$(find rosflight)/launch/auto_sys_startup.launch">
+			<!--  <arg name="vicon" value="false"/>
+			<arg name="optitrack" value="true"/> -->
+		</include>
+
+		<!-- LAUNCH STATIC TRANSFORMS -->
+		<include file="$(find octomap_server)/tf/quad_transforms.launch">
+			<arg name="robot_name" value="$(arg robot_name)"/>
+			<arg name="camera" value="true"/>
+			<arg name="realsense_name" value="camera"/>
+		</include>
+
+		<!-- RUN VRPN TRANSFORMS -->
+		<node pkg="octomap_server" type="vrpn_quad_transform.py" name="vrpn_pose_tf" output="screen">
+			<param name="robot_name" value="$(arg robot_name)" />
+		</node>
+	
+		<!-- LAUNCH REALSENSE -->
+		<include file="$(find realsense2_camera)/launch/rs_octomap.launch">
+			<arg name="camera" value="camera"/>
+			<arg name="tf_prefix" value="$(arg robot_name)"/>
+			<arg name="manager" value="realsense2_camera_manager"/>
+		</include>
+
+		<!-- LAUNCH OCTOMAP SERVER -->
+		<include file="$(find octomap_server)/launch/octomap_mapping.launch">
+			<arg name="robot_name" value="$(arg robot_name)"/>
+		</include>
+
+                <!-- LAUNCH OCTOMAP MSG THROTTLE (GLOBAL MAPPING) -->
+                <node pkg="topic_tools" type="throttle" name="topic_tools_throttle_octomap_binary" args="messages /$(env ROS_HOSTNAME)/octomap_binary 0.0667 /$(env ROS_HOSTNAME)/octomap_binary_throttle" output="screen"/>
+
+                <!-- LAUNCH OCTOMAP TO PCL (GLOBAL MAPPING) -->
+                <include file="$(find octomap_to_pcl)/launch/octomap_to_pcl.launch">
+                </include>
+
+                <!-- LAUNCH MERGE PCL (GLOBAL MAPPING) -->
+                <include file="$(find merge_pcl)/launch/merge_pcl.launch">
+                </include>
+
+		<!-- LAUNCH PCL OUTLIER REMOVAL -->
+		<!-- <include file="$(find statistical_removal)/launch/pcl_outlier_removal.launch">
+			<arg name="robot_name" value="$(arg robot_name)"/> 
+		</include> -->
+
+	</group>
+
+</launch>

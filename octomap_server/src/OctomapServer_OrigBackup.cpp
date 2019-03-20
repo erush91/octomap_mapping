@@ -32,9 +32,6 @@
 using namespace octomap;
 using octomap_msgs::Octomap;
 
-using std::cout;
-using std::endl;
-
 bool is_equal (double a, double b, double epsilon = 1.0e-7)
 {
     return std::abs(a - b) < epsilon;
@@ -166,19 +163,13 @@ OctomapServer::OctomapServer(ros::NodeHandle private_nh_)
   private_nh.param("latch", m_latchedTopics, m_latchedTopics);
   if (m_latchedTopics){
     ROS_INFO("Publishing latched (single publish will take longer, all topics are prepared)");
-  }
-  else{
+  } else
     ROS_INFO("Publishing non-latched (topics are only prepared as needed, will only be re-published on map change");
-  }
-  ROS_INFO("m_latchedTopics: %d", m_latchedTopics);
 
   m_markerPub = m_nh.advertise<visualization_msgs::MarkerArray>("occupied_cells_vis_array", 1, m_latchedTopics);
   m_binaryMapPub = m_nh.advertise<Octomap>("octomap_binary", 1, m_latchedTopics);
   m_fullMapPub = m_nh.advertise<Octomap>("octomap_full", 1, m_latchedTopics);
-  m_pointCloudCentersOccupiedPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers_occupied", 1, m_latchedTopics);
-  m_pointCloudCentersFreePub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers_free", 1, m_latchedTopics);
-  m_pointCloudOccupiedPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_occupied", 1, m_latchedTopics);
-  m_pointCloudFreePub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_free", 1, m_latchedTopics);  
+  m_pointCloudPub = m_nh.advertise<sensor_msgs::PointCloud2>("octomap_point_cloud_centers", 1, m_latchedTopics);
   m_mapPub = m_nh.advertise<nav_msgs::OccupancyGrid>("projected_map", 5, m_latchedTopics);
   m_fmarkerPub = m_nh.advertise<visualization_msgs::MarkerArray>("free_cells_vis_array", 1, m_latchedTopics);
 
@@ -502,14 +493,10 @@ void OctomapServer::publishAll(const ros::Time& rostime){
     ROS_WARN("Nothing to publish, octree is empty");
     return;
   }
-  cout << "publishAll m_latchedTopics: " << m_latchedTopics << endl;
-  
+
   bool publishFreeMarkerArray = m_publishFreeSpace && (m_latchedTopics || m_fmarkerPub.getNumSubscribers() > 0);
   bool publishMarkerArray = (m_latchedTopics || m_markerPub.getNumSubscribers() > 0);
-  bool publishPointCloudCentersOccupied = (m_latchedTopics || m_pointCloudCentersOccupiedPub.getNumSubscribers() > 0);
-  bool publishPointCloudCentersFree = (m_latchedTopics || m_pointCloudCentersFreePub.getNumSubscribers() > 0);
-  bool publishPointCloudOccupied = (m_latchedTopics || m_pointCloudOccupiedPub.getNumSubscribers() > 0);
-  bool publishPointCloudFree = (m_latchedTopics || m_pointCloudFreePub.getNumSubscribers() > 0);
+  bool publishPointCloud = (m_latchedTopics || m_pointCloudPub.getNumSubscribers() > 0);
   bool publishBinaryMap = (m_latchedTopics || m_binaryMapPub.getNumSubscribers() > 0);
   bool publishFullMap = (m_latchedTopics || m_fullMapPub.getNumSubscribers() > 0);
   m_publish2DMap = (m_latchedTopics || m_mapPub.getNumSubscribers() > 0);
@@ -527,46 +514,28 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   // each array stores all cubes of a different size, one for each depth level:
   occupiedNodesVis.markers.resize(m_treeDepth+1);
 
-  // init occupied pointcloud centers:
-  pcl::PointCloud<PCLPoint> pclCloudCentersOccupied;
-
-  // init free pointcloud centers:
-  pcl::PointCloud<PCLPoint> pclCloudCentersFree;
-
-  // init occupied pointcloud:
-  pcl::PointCloud<PCLPoint> pclCloudOccupied;
-
-  // init free pointcloud:
-  pcl::PointCloud<PCLPoint> pclCloudFree;
+  // init pointcloud:
+  pcl::PointCloud<PCLPoint> pclCloud;
 
   // call pre-traversal hook:
   handlePreNodeTraversal(rostime);
-
-  double size, value;
-  float lower_corner[3];
-  int depth, width;
-  int lowest_depth = (int)m_octree->getTreeDepth();
-  float voxel_size = 0.1; // GENE THIS IS IMPORTANT!!!
 
   // now, traverse all leafs in the tree:
   for (OcTreeT::iterator it = m_octree->begin(m_maxTreeDepth),
       end = m_octree->end(); it != end; ++it)
   {
     bool inUpdateBBX = isInUpdateBBX(it);
-    
+
     // call general hook:
     handleNode(it);
     if (inUpdateBBX)
       handleNodeInBBX(it);
 
-    depth = (int)it.getDepth();
-    size = it.getSize();
-
     if (m_octree->isNodeOccupied(*it)){
       double z = it.getZ();
-      if (z > m_occupancyMinZ && z < m_occupancyMaxZ){
+      if (z > m_occupancyMinZ && z < m_occupancyMaxZ)
+      {
         double size = it.getSize();
-        //ROS_INFO("Occ Depth %d", depth);
         double x = it.getX();
         double y = it.getY();
 #ifdef COLOR_OCTOMAP_SERVER
@@ -574,6 +543,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
         int g = it->getColor().g;
         int b = it->getColor().b;
 #endif
+
         // Ignore speckles in the map:
         if (m_filterSpeckles && (it.getDepth() == m_treeDepth +1) && isSpeckleNode(it.getKey())){
           ROS_DEBUG("Ignoring single speckle at (%f,%f,%f)", x, y, z);
@@ -583,6 +553,7 @@ void OctomapServer::publishAll(const ros::Time& rostime){
         handleOccupiedNode(it);
         if (inUpdateBBX)
           handleOccupiedNodeInBBX(it);
+
 
         //create marker:
         if (publishMarkerArray){
@@ -612,82 +583,27 @@ void OctomapServer::publishAll(const ros::Time& rostime){
 #endif
         }
 
-        // insert into occupied pointcloud centers:
-        ROS_INFO_THROTTLE(1, "publishPointCloudCentersOccupied: %d", publishPointCloudCentersOccupied);
-        if (publishPointCloudCentersOccupied) {
+        // insert into pointcloud:
+        if (publishPointCloud) {
 #ifdef COLOR_OCTOMAP_SERVER
           PCLPoint _point = PCLPoint();
           _point.x = x; _point.y = y; _point.z = z;
           _point.r = r; _point.g = g; _point.b = b;
-          pclCloudCentersOccupied.push_back(_point);
+          pclCloud.push_back(_point);
 #else
-          pclCloudCentersOccupied.push_back(PCLPoint(x, y, z));
-#endif
-        }
-
-        // insert into occupied pointcloud:
-        ROS_INFO_THROTTLE(1, "publishPointCloudOccupied: %d", publishPointCloudOccupied);
-        if (publishPointCloudOccupied) {
-#ifdef COLOR_OCTOMAP_SERVER
-          if (depth == lowest_depth){
-            PCLPoint _point = PCLPoint();
-            _point.x = x; _point.y = y; _point.z = z;
-            _point.r = r; _point.g = g; _point.b = b;
-            pclCloudOccupied.push_back(_point);
-          }
-          else{
-            // Fill in all the voxels internal to the leaf
-            int width = (int)std::pow(2.0, (double)(lowest_depth-depth));
-            lower_corner[0] = x - size/2.0 + voxel_size/2.0;
-            lower_corner[1] = y - size/2.0 + voxel_size/2.0;
-            lower_corner[2] = z - size/2.0 + voxel_size/2.0;
-            PCLPoint _point = PCLPoint();
-            for (int i=0; i<width; i++){
-              _point.x = lower_corner[0] + i*voxel_size;
-              for (int j=0; j<width; j++){
-                _point.y = lower_corner[1] + j*voxel_size;
-                for (int k=0; k<width; k++){
-                  _point.z = lower_corner[2] + k*voxel_size;
-                  _point.r = r; _point.g = g; _point.b = b;
-                  pclCloudOccupied.push_back(_point);
-                }
-              }
-            }
-          }
-#else
-          if (depth == lowest_depth){
-            pclCloudOccupied.push_back(PCLPoint(x, y, z));
-          }
-          else{
-            // Fill in all the voxels internal to the leaf
-            int width = (int)std::pow(2.0, (double)(lowest_depth-depth));
-            lower_corner[0] = x - size/2.0 + voxel_size/2.0;
-            lower_corner[1] = y - size/2.0 + voxel_size/2.0;
-            lower_corner[2] = z - size/2.0 + voxel_size/2.0;
-            PCLPoint _point = PCLPoint();
-            for (int i=0; i<width; i++){
-              _point.x = lower_corner[0] + i*voxel_size;
-              for (int j=0; j<width; j++){
-                _point.y = lower_corner[1] + j*voxel_size;
-                for (int k=0; k<width; k++){
-                  _point.z = lower_corner[2] + k*voxel_size;
-                  pclCloudOccupied.push_back(_point);
-                }
-              }
-            }
-          }
+          pclCloud.push_back(PCLPoint(x, y, z));
 #endif
         }
 
       }
-    } 
-    else{ // node not occupied => mark as free in 2D map if unknown so far
+    } else{ // node not occupied => mark as free in 2D map if unknown so far
       double z = it.getZ();
-      if (z > m_occupancyMinZ && z < m_occupancyMaxZ){
+      if (z > m_occupancyMinZ && z < m_occupancyMaxZ)
+      {
         handleFreeNode(it);
         if (inUpdateBBX)
           handleFreeNodeInBBX(it);
-	      ROS_INFO_THROTTLE(1, "m_publishFreeSpace: %d",m_publishFreeSpace);
+
         if (m_publishFreeSpace){
           double x = it.getX();
           double y = it.getY();
@@ -704,38 +620,8 @@ void OctomapServer::publishAll(const ros::Time& rostime){
 
             freeNodesVis.markers[idx].points.push_back(cubeCenter);
           }
-          // insert into free pointcloud centers:
-          ROS_INFO_THROTTLE(1, "publishPointCloudCentersFree: %d", publishPointCloudCentersFree);
-          if (publishPointCloudCentersFree) {
-            pclCloudCentersFree.push_back(PCLPoint(x, y, z));
-          }
-          
-          // insert into free pointcloud:
-          ROS_INFO_THROTTLE(1, "publishPointCloudFree: %d", publishPointCloudFree);
-	        if (publishPointCloudFree) {
-            if (depth == lowest_depth){
-              pclCloudFree.push_back(PCLPoint(x, y, z));
-            }
-            else{
-              // Fill in all the voxels internal to the leaf
-              int width = (int)std::pow(2.0, (double)(lowest_depth-depth));
-              lower_corner[0] = x - size/2.0 + voxel_size/2.0;
-              lower_corner[1] = y - size/2.0 + voxel_size/2.0;
-              lower_corner[2] = z - size/2.0 + voxel_size/2.0;
-	            PCLPoint _point = PCLPoint();
-              for (int i=0; i<width; i++){
-                _point.x = lower_corner[0] + i*voxel_size;
-                for (int j=0; j<width; j++){
-                  _point.y = lower_corner[1] + j*voxel_size;
-                  for (int k=0; k<width; k++){
-                    _point.z = lower_corner[2] + k*voxel_size;
-		                pclCloudFree.push_back(_point);
-                  }
-                }
-              }
-            }
-          }
         }
+
       }
     }
   }
@@ -796,40 +682,13 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   }
 
 
-  // finish occupied pointcloud centers:
-  if (publishPointCloudCentersOccupied){
+  // finish pointcloud:
+  if (publishPointCloud){
     sensor_msgs::PointCloud2 cloud;
-    pcl::toROSMsg (pclCloudCentersOccupied, cloud);
+    pcl::toROSMsg (pclCloud, cloud);
     cloud.header.frame_id = m_worldFrameId;
     cloud.header.stamp = rostime;
-    m_pointCloudCentersOccupiedPub.publish(cloud);
-  }
-
-  // finish free pointcloud centers:
-  if (publishPointCloudCentersFree){
-    sensor_msgs::PointCloud2 cloud_free;
-    pcl::toROSMsg (pclCloudCentersFree, cloud_free);
-    cloud_free.header.frame_id = m_worldFrameId;
-    cloud_free.header.stamp = rostime;
-    m_pointCloudCentersFreePub.publish(cloud_free);
-  }
-
-  // finish occupied pointcloud:
-  if (publishPointCloudOccupied){
-    sensor_msgs::PointCloud2 cloud;
-    pcl::toROSMsg (pclCloudOccupied, cloud);
-    cloud.header.frame_id = m_worldFrameId;
-    cloud.header.stamp = rostime;
-    m_pointCloudOccupiedPub.publish(cloud);
-  }
-
-  // finish free pointcloud:
-  if (publishPointCloudFree){
-    sensor_msgs::PointCloud2 cloud_free;
-    pcl::toROSMsg (pclCloudFree, cloud_free);
-    cloud_free.header.frame_id = m_worldFrameId;
-    cloud_free.header.stamp = rostime;
-    m_pointCloudFreePub.publish(cloud_free);
+    m_pointCloudPub.publish(cloud);
   }
 
   if (publishBinaryMap)

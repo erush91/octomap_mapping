@@ -1,0 +1,20 @@
+<launch>
+	<arg name="robot_name" default="robot1"/>
+	<arg name="camera" default="true"/>
+	<arg name="realsense_name" default="realsense0"/>
+
+	<!-- transform for forward facing realsense to base_link -->
+	<node 	if="$(arg camera)" 
+		pkg="tf" 
+		type="static_transform_publisher" 
+		name="$(arg realsense_name)_base_tf" 
+		args="0.0 0 0 0 0 0 $(arg robot_name)_base_link $(arg robot_name)_camera_link 10"/>
+
+	<!-- transform from base_link frame to RadarQuad frame -->
+	<node 	pkg="tf" 
+		type="static_transform_publisher" 
+		name="base_link_tf" 
+		args="0 0 0 0 0 0 $(arg robot_name) $(arg robot_name)_base_link 10"/>
+
+</launch>
+

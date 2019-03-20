@@ -46,9 +46,11 @@ class MapSaver{
 public:
   MapSaver(const std::string& mapname, bool full){
     ros::NodeHandle n;
-    std::string servname = "octomap_binary";
+    std::string servname = "/marble_nuc5/octomap_binary";
+  //std::string servname = "octomap_binary";
     if (full)
-      servname = "octomap_full";
+      servname = "/marble_nuc5/octomap_full";
+    //servname = "octomap_full";
     ROS_INFO("Requesting the map from %s...", n.resolveName(servname).c_str());
     GetOctomap::Request req;
     GetOctomap::Response resp;
