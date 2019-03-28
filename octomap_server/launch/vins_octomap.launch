@@ -14,7 +14,7 @@
 
         <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
         <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
-            <remap from="~input" to="/rs_pcl_throttled" />
+            <remap from="~input" to="rs_pcl_throttled" />
             <rosparam>
               filter_field_name: z
               filter_limit_min: 0.2
@@ -37,7 +37,7 @@
 		<param name="sensor_model/min_range" value="0.2" />
 
 		<!-- data source to integrate (PointCloud2) -->
-		<remap from="cloud_in" to="/voxel_grid/output" />
+		<remap from="cloud_in" to="voxel_grid/output" />
 		<param name="filter_speckles" type="bool" value="true" />
 	</node>
 
