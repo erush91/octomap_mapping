@@ -108,22 +108,24 @@ protected:
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "octomap_point_cloud_map_merge_node");
-  ros::NodeHandle nh_;
+  ros::NodeHandle nh_("~");
   
   std::string NAMESPACE_NAME;
   std::string NODE_NAME;
   std::string CLOUD_TYPE;
+  float PUB_RATE;
 
   NAMESPACE_NAME = ros::this_node::getNamespace();
   NODE_NAME = ros::this_node::getName();
   nh_.param(NODE_NAME + "/cloud_type", CLOUD_TYPE, CLOUD_TYPE);
-
+  nh_.param("pub_rate", PUB_RATE, PUB_RATE);
+  
   PointCloudFuser pcl_global;
-  ros::Subscriber pclSub1 = nh_.subscribe("/A51/pcl_local_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_1, &pcl_global);
-  ros::Subscriber pclSub2 = nh_.subscribe("/A52/pcl_local_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_2, &pcl_global);
+  ros::Subscriber pclSub1 = nh_.subscribe("/P01/pcl_local_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_1, &pcl_global);
+  ros::Subscriber pclSub2 = nh_.subscribe("/P02/pcl_local_" + CLOUD_TYPE, 1, &PointCloudFuser::pclCallback_2, &pcl_global);
   ros::Publisher pclGlobalPub1 = nh_.advertise<sensor_msgs::PointCloud2>(NAMESPACE_NAME + "/pcl_global_" + CLOUD_TYPE, 1000);
 
-  ros::Rate loop_rate(0.0333);
+  ros::Rate loop_rate(PUB_RATE);
   
   long int cnt = 0;
 
@@ -150,6 +152,7 @@ int main(int argc, char** argv)
     
     loop_rate.sleep();
     ros::spinOnce();
+  
   }
 }
 

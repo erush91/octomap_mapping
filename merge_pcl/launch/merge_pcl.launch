@@ -1,10 +1,12 @@
 <launch>
         <node pkg="merge_pcl" type="merge_pcl" name="merge_pcl_occupied" output="screen">
                 <param name="cloud_type" value="occupied" />
+		<param name="pub_rate" value="1"/>
         </node>
 
 	<node pkg="merge_pcl" type="merge_pcl" name="merge_pcl_free" output="screen">
                 <param name="cloud_type" value="free" />
+                <param name="pub_rate" value="1"/>
         </node>
 </launch>
 
