@@ -1,0 +1,8 @@
+prefix=/home/ohrad/catkin_ws/install
+
+Name: merge_pcl
+Description: Description of merge_pcl
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/ohrad/catkin_ws/install/lib 
+Requires: 

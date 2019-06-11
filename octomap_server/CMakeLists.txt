@@ -72,6 +72,12 @@ target_link_libraries(octomap_tracking_server_node ${PROJECT_NAME} ${LINK_LIBS})
 add_executable(compass_tf_pub src/compass_tfpub.cpp)
 target_link_libraries(compass_tf_pub ${catkin_LIBRARIES})
 
+add_executable(compass_jackal_tf_pub src/compass_jackal_tfpub.cpp)
+target_link_libraries(compass_jackal_tf_pub ${catkin_LIBRARIES})
+
+add_executable(jackal_odom_pub src/jackal_odom_pub.cpp)
+target_link_libraries(jackal_odom_pub ${catkin_LIBRARIES})
+
 # Nodelet
 add_library(octomap_server_nodelet src/octomap_server_nodelet.cpp)
 target_link_libraries(octomap_server_nodelet ${PROJECT_NAME} ${LINK_LIBS})
