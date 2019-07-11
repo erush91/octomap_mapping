@@ -13,7 +13,7 @@
         <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
 
         <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
-        <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
+        <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen"> -->
             <remap from="~input" to="/ouster_pcl_throttled" />
             <rosparam>
               filter_field_name: z
@@ -25,7 +25,7 @@
         </node>
 
 	<node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
-		<param name="resolution" value="0.1" />
+		<param name="resolution" value="0.4" />
 
 		<!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
 		<param name="frame_id" type="string" value="world" />

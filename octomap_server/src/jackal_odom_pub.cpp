@@ -3,8 +3,8 @@
 #include <tf/transform_datatypes.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/TransformStamped.h>
-
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "jackal_odom_publisher");
@@ -14,13 +14,18 @@ int main(int argc, char** argv){
   ros::Publisher jackal_odom_pub = 
     node.advertise<nav_msgs::Odometry>("jackal_odom", 10);
 
+  ros::Publisher jackal_point_pub = 
+    node.advertise<geometry_msgs::PointStamped>("jackal_point", 1);
+  
   tf::TransformListener listener;
   nav_msgs::Odometry odom_msg;
   geometry_msgs::TransformStamped tf_msg;
   geometry_msgs::Quaternion quat_msg;
 
+  geometry_msgs::PointStamped point_msg; 
+
   odom_msg.header.frame_id = "world"; 
-  ros::Rate rate(50.0);
+  ros::Rate rate(5);
   while (node.ok()){
     tf::StampedTransform transform;
     try{
@@ -34,10 +39,17 @@ int main(int argc, char** argv){
     odom_msg.header.stamp = ros::Time::now();
     odom_msg.pose.pose.position.x = transform.getOrigin().x();
     odom_msg.pose.pose.position.y = transform.getOrigin().y();
-    odom_msg.pose.pose.position.z = transform.getOrigin().z()+.25;
+    odom_msg.pose.pose.position.z = transform.getOrigin().z();
     tf::quaternionTFToMsg(transform.getRotation().normalize(), odom_msg.pose.pose.orientation);
 
     jackal_odom_pub.publish(odom_msg);
+
+    point_msg.header.stamp = ros::Time::now();
+    point_msg.point.x = odom_msg.pose.pose.position.x;
+    point_msg.point.y = odom_msg.pose.pose.position.y;
+    point_msg.point.z = odom_msg.pose.pose.position.z;
+
+    jackal_point_pub.publish(point_msg);
 
     rate.sleep();
   }

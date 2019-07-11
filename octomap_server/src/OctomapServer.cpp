@@ -546,7 +546,6 @@ void OctomapServer::publishAll(const ros::Time& rostime){
   float lower_corner[3];
   int depth, width;
   int lowest_depth = (int)m_octree->getTreeDepth();
-  float voxel_size = 0.1; // GENE THIS IS IMPORTANT!!!
 
   // now, traverse all leafs in the tree:
   for (OcTreeT::iterator it = m_octree->begin(m_maxTreeDepth),
@@ -638,16 +637,16 @@ void OctomapServer::publishAll(const ros::Time& rostime){
           else{
             // Fill in all the voxels internal to the leaf
             int width = (int)std::pow(2.0, (double)(lowest_depth-depth));
-            lower_corner[0] = x - size/2.0 + voxel_size/2.0;
-            lower_corner[1] = y - size/2.0 + voxel_size/2.0;
-            lower_corner[2] = z - size/2.0 + voxel_size/2.0;
+            lower_corner[0] = x - size/2.0 + m_res/2.0;
+            lower_corner[1] = y - size/2.0 + m_res/2.0;
+            lower_corner[2] = z - size/2.0 + m_res/2.0;
             PCLPoint _point = PCLPoint();
             for (int i=0; i<width; i++){
-              _point.x = lower_corner[0] + i*voxel_size;
+              _point.x = lower_corner[0] + i*m_res;
               for (int j=0; j<width; j++){
-                _point.y = lower_corner[1] + j*voxel_size;
+                _point.y = lower_corner[1] + j*m_res;
                 for (int k=0; k<width; k++){
-                  _point.z = lower_corner[2] + k*voxel_size;
+                  _point.z = lower_corner[2] + k*m_res;
                   _point.r = r; _point.g = g; _point.b = b;
                   pclCloudOccupied.push_back(_point);
                 }
@@ -661,16 +660,16 @@ void OctomapServer::publishAll(const ros::Time& rostime){
           else{
             // Fill in all the voxels internal to the leaf
             int width = (int)std::pow(2.0, (double)(lowest_depth-depth));
-            lower_corner[0] = x - size/2.0 + voxel_size/2.0;
-            lower_corner[1] = y - size/2.0 + voxel_size/2.0;
-            lower_corner[2] = z - size/2.0 + voxel_size/2.0;
+            lower_corner[0] = x - size/2.0 + m_res/2.0;
+            lower_corner[1] = y - size/2.0 + m_res/2.0;
+            lower_corner[2] = z - size/2.0 + m_res/2.0;
             PCLPoint _point = PCLPoint();
             for (int i=0; i<width; i++){
-              _point.x = lower_corner[0] + i*voxel_size;
+              _point.x = lower_corner[0] + i*m_res;
               for (int j=0; j<width; j++){
-                _point.y = lower_corner[1] + j*voxel_size;
+                _point.y = lower_corner[1] + j*m_res;
                 for (int k=0; k<width; k++){
-                  _point.z = lower_corner[2] + k*voxel_size;
+                  _point.z = lower_corner[2] + k*m_res;
                   pclCloudOccupied.push_back(_point);
                 }
               }
@@ -719,16 +718,16 @@ void OctomapServer::publishAll(const ros::Time& rostime){
             else{
               // Fill in all the voxels internal to the leaf
               int width = (int)std::pow(2.0, (double)(lowest_depth-depth));
-              lower_corner[0] = x - size/2.0 + voxel_size/2.0;
-              lower_corner[1] = y - size/2.0 + voxel_size/2.0;
-              lower_corner[2] = z - size/2.0 + voxel_size/2.0;
+              lower_corner[0] = x - size/2.0 + m_res/2.0;
+              lower_corner[1] = y - size/2.0 + m_res/2.0;
+              lower_corner[2] = z - size/2.0 + m_res/2.0;
 	            PCLPoint _point = PCLPoint();
               for (int i=0; i<width; i++){
-                _point.x = lower_corner[0] + i*voxel_size;
+                _point.x = lower_corner[0] + i*m_res;
                 for (int j=0; j<width; j++){
-                  _point.y = lower_corner[1] + j*voxel_size;
+                  _point.y = lower_corner[1] + j*m_res;
                   for (int k=0; k<width; k++){
-                    _point.z = lower_corner[2] + k*voxel_size;
+                    _point.z = lower_corner[2] + k*m_res;
 		                pclCloudFree.push_back(_point);
                   }
                 }
